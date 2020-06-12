@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Services\LoginTool;
 use Hyperf\Contract\OnCloseInterface;
 use Hyperf\Contract\OnMessageInterface;
 use Hyperf\Contract\OnOpenInterface;
@@ -25,6 +26,11 @@ class WebSocketController implements OnMessageInterface, OnOpenInterface, OnClos
 
     public function onOpen(WebSocketServer $server, Request $request): void
     {
-        $server->push($request->fd, 'Opened');
+        $uInfo = LoginTool::instance()->tokenCheck($request->get['token'],'APP_ID');
+        if($uInfo){
+            $server->push($request->fd, 'Opened');
+        }else{
+            $server->disconnect($request->fd,1006,'bad login');
+        }
     }
 }
