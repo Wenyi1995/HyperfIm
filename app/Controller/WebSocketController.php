@@ -27,10 +27,11 @@ class WebSocketController implements OnMessageInterface, OnOpenInterface, OnClos
     public function onOpen(WebSocketServer $server, Request $request): void
     {
         $uInfo = LoginTool::instance()->tokenCheck($request->get['token'],'APP_ID');
-        if($uInfo){
-            $server->push($request->fd, 'Opened');
-        }else{
-            $server->disconnect($request->fd,1006,'bad login');
-        }
+        var_dump($uInfo);
+//        if($uInfo){
+            $server->push($request->fd, LoginTool::instance()->tokenBuild('1','uname','APP_ID'));
+//        }else{
+//            $server->disconnect($request->fd,1006,'bad login');
+//        }
     }
 }
