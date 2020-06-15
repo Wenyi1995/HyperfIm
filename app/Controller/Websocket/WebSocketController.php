@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace App\Controller;
+namespace App\Controller\Websocket;
 
 use App\Services\LoginTool;
 use Hyperf\Contract\OnCloseInterface;

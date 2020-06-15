@@ -1,15 +1,25 @@
 version: "3"
 
 services:
-  hyperf:
+  hyperf-socket:
     image: hyperf/hyperf
-    container_name: hyperfIm
+    container_name: hyperf-socket
     networks:
       - hyperfIm
     volumes:
       - ./:/hyperf-skeleton:rw
     ports:
       - "9501:9501"
+    command: ["php","/hyperf-skeleton/bin/hyperf.php","start"]
+  hyperf-web:
+    image: hyperf/hyperf
+    container_name: hyperf-web
+    networks:
+      - hyperfIm
+    volumes:
+      - ./:/hyperf-skeleton:rw
+    ports:
+      - "8080:8080"
     command: ["php","/hyperf-skeleton/bin/hyperf.php","start"]
   hyperf-mysql:
     image: mysql:5.7
