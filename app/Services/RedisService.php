@@ -11,7 +11,7 @@ class RedisService
     use StaticInstance;
 
     /**
-     *
+     * 获取redis连接
      * @param int $db
      * @return object
      */
