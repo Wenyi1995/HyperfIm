@@ -16,3 +16,7 @@ use Hyperf\HttpServer\Router\Router;
 Router::addServer('ws', function () {
     Router::get('/im', 'App\Controller\Websocket\WebSocketController');
 });
+Router::addServer('http', function () {
+    Router::post('/login', 'App\Controller\Http\LoginController@login');
+    Router::post('/register', 'App\Controller\Http\LoginController@register');
+});
