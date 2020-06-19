@@ -1,64 +1,52 @@
 <?php
 declare(strict_types=1);
 
-namespace App\Controller\WebSocket;
+namespace App\Controller\Websocket;
 
+use Hyperf\Di\Annotation\Inject;
 use App\Services\LoginTool;
+use App\Services\PushData;
 use App\Services\RedisService;
-use Hyperf\SocketIOServer\Annotation\Event;
-use Hyperf\SocketIOServer\Annotation\SocketIONamespace;
-use Hyperf\SocketIOServer\BaseNamespace;
-use Hyperf\SocketIOServer\Socket;
-use Hyperf\Utils\Codec\Json;
+use Hyperf\Contract\OnCloseInterface;
+use Hyperf\Contract\OnMessageInterface;
+use Hyperf\Contract\OnOpenInterface;
+use Swoole\Http\Request;
+use Swoole\Server;
+use Swoole\Websocket\Frame;
+use Swoole\WebSocket\Server as WebSocketServer;
 
-/**
- * @SocketIONamespace("/im")
- */
-class WebSocketController extends BaseNamespace
+class WebSocketController implements OnMessageInterface, OnOpenInterface, OnCloseInterface
 {
     /**
-     * @Event("event")
-     * @param Socket $socket
-     * @param $data
-     * @return string
+     * @Inject
+     * @var PushData
      */
-    public function onEvent(Socket $socket, $data)
+    protected $push;
+
+    public function onMessage(WebSocketServer $server, Frame $frame): void
     {
-        $data = Json::decode($data);
-        $uInfo = LoginTool::instance()->tokenCheck($data['token'], $data['appId']);
+        $server->push($frame->fd, 'Recv: ' . $frame->data);
+    }
+
+    public function onClose(Server $server, int $fd, int $reactorId): void
+    {
+        var_dump('closed');
+    }
+
+    public function onOpen(WebSocketServer $server, Request $request): void
+    {
+
+        $token = $request->get['token'];
+        $appId = $request->get['appId'];
+        $uInfo = LoginTool::instance()->tokenCheck($token, $appId);
         if ($uInfo) {
             $redis = RedisService::instance()->getCon();
-            $redis->hSet(config('custom.wsRedisKeys.userSidKey'), (string)$uInfo[0], (string)$socket->getSid());
-            $redis->hSet(config('custom.wsRedisKeys.sidUserKey'), (string)$socket->getSid(), (string)$socket->getSid());
-            // 应答
-            return 'Event Received: ' . $uInfo[1];
+            $redis->hSet(config('custom.wsRedisKeys.userFdKey'), (string)$uInfo[0], (string)$request->fd);
+            $redis->hSet(config('custom.wsRedisKeys.fdUserKey'), (string)$request->fd, (string)$uInfo[0]);
+            $this->push->pushSuccess($request->fd);
         } else {
-            $socket->disconnect();
+            $this->push->pushDataError('bad request', $request->fd);
+            $server->disconnect($request->fd, 1007, 'bad request');
         }
-    }
-
-    /**
-     * @Event("join-room")
-     * @param string $data
-     */
-    public function onJoinRoom(Socket $socket, $data)
-    {
-        var_dump($data);
-        // 将当前用户加入房间
-        $socket->join($data);
-        // 向房间内其他用户推送（不含当前用户）
-        $socket->to($data)->emit('event', $socket->getSid() . "has joined {$data}");
-        // 向房间内所有人广播（含当前用户）
-        $this->emit('event', 'There are ' . count($socket->getAdapter()->clients($data)) . " players in {$data}");
-    }
-
-    /**
-     * @Event("say")
-     * @param string $data
-     */
-    public function onSay(Socket $socket, $data)
-    {
-        $data = Json::decode($data);
-        $socket->to($data['room'])->emit('event', $socket->getSid() . " say: {$data['message']}");
     }
 }

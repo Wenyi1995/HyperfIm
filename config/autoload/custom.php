@@ -10,7 +10,7 @@ return [
     'SEPARATOR' => '::',  // 缓存分隔符
 
     'wsRedisKeys'=>[
-        'userSidKey'=>'uid2sid',
-        'sidUserKey'=>'sid2uid',
+        'userFdKey'=>'uid2fd',
+        'fdUserKey'=>'fd2uid',
     ],
 ];
