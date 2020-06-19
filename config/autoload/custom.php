@@ -12,5 +12,6 @@ return [
     'wsRedisKeys'=>[
         'userFdKey'=>'uid2fd',
         'fdUserKey'=>'fd2uid',
+        'room_visitor_fd_key'=>'roomVisitorsFds'
     ],
 ];

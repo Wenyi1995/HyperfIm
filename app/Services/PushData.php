@@ -49,7 +49,7 @@ class PushData
     {
         $container = ApplicationContext::getContainer();
         $redis = $container->get(Redis::class);
-        $to = $redis->SMEMBERS(config('custom.redisKeys.room_visitor_fd_key') . $room);
+        $to = $redis->SMEMBERS(config('custom.wsRedisKeys.room_visitor_fd_key') . $room);
         return $this->pushData($data, $to, $delay, 0);
     }
 
