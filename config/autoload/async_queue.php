@@ -13,10 +13,13 @@ declare(strict_types=1);
 return [
     'default' => [
         'driver' => Hyperf\AsyncQueue\Driver\RedisDriver::class,
+        'redis' => [
+            'pool' => 'db_4'
+        ],
         'channel' => 'queue',
         'timeout' => 2,
         'retry_seconds' => 5,
         'handle_timeout' => 10,
-        'processes' => 1,
+        'processes' => 5,//消费进程数
     ],
 ];
