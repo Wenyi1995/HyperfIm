@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Controller\Websocket;
 
+use App\Services\Tool;
 use Hyperf\Di\Annotation\Inject;
 use App\Services\LoginTool;
 use App\Services\PushData;
@@ -10,6 +11,9 @@ use App\Services\RedisService;
 use Hyperf\Contract\OnCloseInterface;
 use Hyperf\Contract\OnMessageInterface;
 use Hyperf\Contract\OnOpenInterface;
+use Hyperf\Task\Task;
+use Hyperf\Task\TaskExecutor;
+use Hyperf\Utils\ApplicationContext;
 use Swoole\Http\Request;
 use Swoole\Server;
 use Swoole\Websocket\Frame;
@@ -25,12 +29,28 @@ class WebSocketController implements OnMessageInterface, OnOpenInterface, OnClos
 
     public function onMessage(WebSocketServer $server, Frame $frame): void
     {
-        $server->push($frame->fd, 'Recv: ' . $frame->data);
+        $data = json_decode($frame->data, true);
+        if ($data) {
+            $methodArr = Tool::instance()->getCallMethod($data['method']);
+            if ($methodArr) {
+                $args = [
+                    $frame->fd,
+                    [
+                        'uid' => RedisService::instance()->getCon()->hGet(config('custom.wsRedisKeys.fdUserKey'), (string)$frame->fd)
+                    ]
+                ];
+                $container = ApplicationContext::getContainer();
+                $exec = $container->get(TaskExecutor::class);
+                $exec->execute(new Task($methodArr, $args));
+            }
+        }
     }
 
     public function onClose(Server $server, int $fd, int $reactorId): void
     {
-        var_dump('closed');
+        if ($reactorId) {
+            Tool::instance()->closeSocket($fd);
+        }
     }
 
     public function onOpen(WebSocketServer $server, Request $request): void
@@ -45,7 +65,6 @@ class WebSocketController implements OnMessageInterface, OnOpenInterface, OnClos
             $redis->hSet(config('custom.wsRedisKeys.fdUserKey'), (string)$request->fd, (string)$uInfo[0]);
             $this->push->pushSuccess($request->fd);
         } else {
-            $this->push->pushDataError('bad request', $request->fd);
             $server->disconnect($request->fd, 1007, 'bad request');
         }
     }
