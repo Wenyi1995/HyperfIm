@@ -15,9 +15,7 @@ use Hyperf\Task\Task;
 use Hyperf\Task\TaskExecutor;
 use Hyperf\Utils\ApplicationContext;
 use Swoole\Http\Request;
-use Swoole\Server;
 use Swoole\Websocket\Frame;
-use Swoole\WebSocket\Server as WebSocketServer;
 
 class WebSocketController implements OnMessageInterface, OnOpenInterface, OnCloseInterface
 {
@@ -27,7 +25,7 @@ class WebSocketController implements OnMessageInterface, OnOpenInterface, OnClos
      */
     protected $push;
 
-    public function onMessage(WebSocketServer $server, Frame $frame): void
+    public function onMessage($server, Frame $frame): void
     {
         $data = json_decode($frame->data, true);
         if ($data) {
@@ -46,14 +44,14 @@ class WebSocketController implements OnMessageInterface, OnOpenInterface, OnClos
         }
     }
 
-    public function onClose(Server $server, int $fd, int $reactorId): void
+    public function onClose($server, int $fd, int $reactorId): void
     {
         if ($reactorId) {
             Tool::instance()->closeSocket($fd);
         }
     }
 
-    public function onOpen(WebSocketServer $server, Request $request): void
+    public function onOpen($server, Request $request): void
     {
 
         $token = $request->get['token'];
