@@ -19,13 +19,13 @@ class LoginController extends AbstractController
         $data = $request->validated();
         $info = User::query()->where('name', $data['name'])->first();
         if (empty($info)) {
-            return $this->response->withStatus(400)->raw(__('user not exists'));
+            return $this->response->withStatus(400)->withBody(__('user not exists'));
         } else {
             $pass = md5($data['pass'] . $info->salt);
             if ($pass == $info->pass) {
-                return $this->response->raw(LoginTool::instance()->tokenBuild($info->id, $info->name, $request->header('appId')));
+                return $this->response->withBody(LoginTool::instance()->tokenBuild($info->id, $info->name, $request->header('appId')));
             } else {
-                return $this->response->withStatus(400)->raw(__('wrong password'));
+                return $this->response->withStatus(400)->withBody(__('wrong password'));
             }
         }
 
